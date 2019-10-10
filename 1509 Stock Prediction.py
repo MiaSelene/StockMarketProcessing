@@ -76,30 +76,29 @@ i=0
 Periode=200
 Graph=[]
 while i<(len(Werte)-Periode):
-    if Trend(Werte[i:i+Periode])>2*Var(Werte[i:i+Periode]):
+    if Trend(Werte[i:i+Periode])>2*numpy.sqrt(Var(Werte[i:i+Periode])):
         Buy(Werte[i],TradePrice)
         XB.append(i)
         YB.append(Werte[i])
-        print('Waiting to sell in Period:',i)
         while Trend(Werte[i:i+Periode])>2*numpy.sqrt(Var(Werte[i:i+Periode])):
             i+=1
-        print(i)
     else:
         BuyPreis,BuyPunkt=NEGmoddedOST(Werte[i:i+Periode])
         i+=BuyPunkt
         Buy(BuyPreis,TradePrice)
         XB.append(i)
         YB.append(BuyPreis)
+        
+    
     if i>(len(Werte)-Periode):
         continue
+    
     if Trend(Werte[i:i+Periode])<-2*numpy.sqrt(Var(Werte[i:i+Periode])):
         Sell(Werte[i],TradePrice)
         XS.append(i)
         YS.append(Werte[i])
-        print('Waiting to Buy in Period',i)
         while Trend(Werte[i:i+Periode])<-2*numpy.sqrt(Var(Werte[i:i+Periode])):
             i+=1
-        print(i)
     else:
         SellPreis,SellPunkt=moddedOST(Werte[i:i+Periode])
         i+=SellPunkt
@@ -109,9 +108,19 @@ while i<(len(Werte)-Periode):
     Graph.append(Guthaben)
     
 plt.subplot(2,2,1)
+x1=[]
+x2=[]
+y1=[]
+y2=[]
 plt.title("Buy/Sell Decisions")
-plt.scatter(XB,YB,s=100,c="g")
-plt.scatter(XS,YS,s=100,c="r")
+for a in range(1,len(XB)-1):
+    if XS[a] not in XB:
+        x1.append(XS[a])
+        x2.append(XB[a])
+        y1.append(YS[a])
+        y2.append(YB[a])
+plt.scatter(x1,y1,s=100,c="g")
+plt.scatter(x2,y2,s=100,c="r")
 
 plt.plot([i for i in range(len(Werte))],Werte,"b-")
 Guthaben+=Aktien*Werte[-1]
@@ -128,4 +137,4 @@ plt.plot(numpy.fft.ifft([0 if abs(x)<1000 else x for x in numpy.fft.rfft(Werte)]
 
 plt.subplot(2,2,4)
 plt.hist([S-B for B,S in zip(YB,YS)])
-plt.title("Decission Effectiveness")
+plt.title("Decision Effectiveness")
