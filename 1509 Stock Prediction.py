@@ -28,9 +28,10 @@ def NEGmoddedOST(List):
     stop=int(len(List)/numpy.e)
     Estimate=min(List[:stop])
     avg=sum(List[:stop])/stop
+    m=RelevantTrend(List[:stop])
     for i in range(stop,len(List)):
         Entry=List[i]
-        Needed=avg+(Estimate-avg)*(1-(i-stop)/(len(List)-stop))
+        Needed=avg+(Estimate-avg)*(1-(i-stop)/(len(List)-stop))*(1+m)
         if Entry<Needed:
             return Entry,i
     return Entry,i
@@ -39,15 +40,17 @@ def moddedOST(List):
     stop=int(len(List)/numpy.e)
     Estimate=max(List[:stop])
     avg=sum(List[:stop])/stop
+    m=RelevantTrend(List[:stop])
     for i in range(stop,len(List)):
         Entry=List[i]
-        Needed=avg+(Estimate-avg)*(1-(i-stop)/(len(List)-stop))
+        Entry=List[i]
+        Needed=avg+(Estimate-avg)*(1-(i-stop)/(len(List)-stop))*(1+m)
         if Entry>Needed:
             return Entry,i
     return Entry,i
 
 Datum=[]
-NeueDaten=requests.get("https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=DJI&interval=1min&outputsize=full&apikey=SARLUC149FRWL21N")
+NeueDaten=requests.get("https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=NTDOY&interval=1min&outputsize=full&apikey=SARLUC149FRWL21N")
 new=json.loads(NeueDaten.content)
 Keys=list(reversed(list(new["Time Series (Daily)"].keys())))
 Werte=[float(new["Time Series (Daily)"][Key]["4. close"]) for Key in Keys]
@@ -100,22 +103,22 @@ Guthaben=8000
 Aktien=0
 TradePrice=6.95
 i=0
-Periode=300
+Periode=400
 Graph=[]
 redPeriode=int(Periode/numpy.e)
-Decision=False
+
 while i<(len(Werte)-Periode):
-    BuyPreis,BuyPunkt=NEGmoddedOST(normalize(Werte[i:i+Periode]))
+    BuyPreis,BuyPunkt=NEGmoddedOST(Werte[i:i+Periode])
     i+=BuyPunkt
     Buy(Werte[i],TradePrice,i)
-    
+    Graph.append(Guthaben+Aktien*Werte[i])
     if i>(len(Werte)-Periode):
         continue
-    SellPreis,SellPunkt=moddedOST(normalize(Werte[i:i+Periode]))
+    SellPreis,SellPunkt=moddedOST(Werte[i:i+Periode])
     i+=SellPunkt
     Sell(Werte[i],TradePrice,i)
     
-    Graph.append(Guthaben)
+    Graph.append(Guthaben+Aktien*Werte[i])
     
 plt.subplot(2,2,1)
 plt.title("Buy/Sell Decisions")
@@ -125,7 +128,7 @@ plt.scatter(XB,YB,s=100,c="r")
 plt.plot([i for i in range(len(Werte))],Werte,"b-")
 Guthaben+=Aktien*Werte[-1]
 Aktien=0    
-print("Factor {0} after 20 years of Trading".format(numpy.round(Guthaben/8000),2))
+print("Factor {0} after 20 years of Trading".format(numpy.round(Guthaben/8000.0),3))
 plt.subplot(2,2,2)
 plt.title("Equity over Time")
 plt.plot(Graph)
@@ -133,9 +136,8 @@ plt.plot([8000 for i in Graph])
 
 plt.subplot(2,2,3)
 plt.title("Fourier Noise Reduction")
-plt.plot(numpy.fft.ifft([0 if abs(x)<1000 else x for x in numpy.fft.rfft(Werte)]))
+plt.plot(numpy.fft.ifft([0 if abs(x)<3000 else x for x in numpy.fft.rfft(Werte)]))
 
 plt.subplot(2,2,4)
 plt.hist([S-B for B,S in zip(YB,YS)])
-plt.axvline(x=numpy.sqrt(Var(Werte)))
 plt.title("Decision Effectiveness")
