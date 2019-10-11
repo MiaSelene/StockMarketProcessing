@@ -8,6 +8,7 @@ import requests
 import json
 import matplotlib.pyplot as plt
 import numpy
+from typing import List
 
 def Trend(List):
     return List[-1]-List[0]
@@ -52,8 +53,15 @@ def moddedOST(List):
 Datum=[]
 NeueDaten=requests.get("https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=NTDOY&interval=1min&outputsize=full&apikey=SARLUC149FRWL21N")
 new=json.loads(NeueDaten.content)
-Keys=list(reversed(list(new["Time Series (Daily)"].keys())))
+Keys = list(reversed(list(new["Time Series (Daily)"].keys())))
+
+
+
 Werte=[float(new["Time Series (Daily)"][Key]["4. close"]) for Key in Keys]
+
+def processing(data):
+    if key == "Time Series (Daily)":
+        key = "time_series_daily"
 
 print("Data ranging from {0} to {1} of DAX".format(Keys[0],Keys[-1]))
 
@@ -81,17 +89,34 @@ def Sell(Preis,Gebühren,i):
     XS.append(i)
     YS.append(Werte[i])
     
+    return a, b, c, d
+    
     
 
 def RelevantTrend(List):
     sig=numpy.sqrt(Var(List))
     m=Trend(List)
+    
+    if not m>2*sig or not m<-2*sig:
+        return 0
+    
+    return m
+    
+    
     if m>2*sig:
         return m
     elif m<-2*sig:
         return m
     else:
         return 0
+    
+    
+    if a == "apple"
+        return "this is fruit"
+    elif a == "bannana":
+        return "this is fruit"
+    else:
+        return "this is not a fruit"
     
 
 
@@ -128,7 +153,10 @@ plt.scatter(XB,YB,s=100,c="r")
 plt.plot([i for i in range(len(Werte))],Werte,"b-")
 Guthaben+=Aktien*Werte[-1]
 Aktien=0    
-print("Factor {0} after 20 years of Trading".format(numpy.round(Guthaben/8000.0),3))
+calc = numpy.round((Guthaben/8000.0), 3)
+print(f"Factor {calc} after 20 years of Trading")
+
+    
 plt.subplot(2,2,2)
 plt.title("Equity over Time")
 plt.plot(Graph)
@@ -141,3 +169,44 @@ plt.plot(numpy.fft.ifft([0 if abs(x)<3000 else x for x in numpy.fft.rfft(Werte)]
 plt.subplot(2,2,4)
 plt.hist([S-B for B,S in zip(YB,YS)])
 plt.title("Decision Effectiveness")
+
+
+
+class Traders():
+    def __init__(self):
+        self.traders = []
+        
+    def traders(self, trader: Trader) -> Dict[str, int]:
+        return self.traders.append(trader)
+
+class Trader(Traders):
+    def __init__(self):
+        self.equity = None
+        self.traders(self)
+        
+    def buy(self):
+        self.equity = "new value"
+        pass
+    
+    def sell(self):
+        self.equity = "new value"
+        pass
+    
+    @property
+    def check_my_equity(self):
+        return self.equity
+    
+    def go_trade(self):
+        """ Implement the logic for trading.. your while loop ;) """
+        pass
+
+
+def main():
+    ravid = Trader(name=Ravid, company=Babbel)
+    dzenan = Trader(name=Dzenan)
+    
+    ravid.go_trade()
+    
+    
+this_is_my_list = []
+this_is_my_list = list()
