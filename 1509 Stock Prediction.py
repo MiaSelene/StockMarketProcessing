@@ -8,7 +8,6 @@ import requests
 import json
 import matplotlib.pyplot as plt
 import numpy
-"""this iteration looks like its performing fucking insanely good, but its not refactored yet, so pretty unreadable, and its also having some display errros (multiple sells after another)"""
 
 def Trend(List):
     return List[-1]-List[0]
@@ -16,6 +15,13 @@ def Trend(List):
 def Var(List):
     avg=sum(List)/len(List)
     return sum([numpy.square(x-avg) for x in List])/len(List)
+
+def normalize(List):
+    normal=[]
+    Prime=RelevantTrend(List)/len(List)
+    for i in range(len(List)):
+        normal.append(List[i]-Prime*i)
+    return normal
 
 
 def NEGmoddedOST(List):
@@ -41,28 +47,49 @@ def moddedOST(List):
     return Entry,i
 
 Datum=[]
-NeueDaten=requests.get("https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=NTDOY&interval=1min&outputsize=full&apikey=SARLUC149FRWL21N")
+NeueDaten=requests.get("https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=DJI&interval=1min&outputsize=full&apikey=SARLUC149FRWL21N")
 new=json.loads(NeueDaten.content)
 Keys=list(reversed(list(new["Time Series (Daily)"].keys())))
 Werte=[float(new["Time Series (Daily)"][Key]["4. close"]) for Key in Keys]
 
 print("Data ranging from {0} to {1} of DAX".format(Keys[0],Keys[-1]))
 
-def Buy(Preis,Gebühren):
+def Buy(Preis,Gebühren,i):
     global Guthaben
     global Aktien
+    global XB
+    global YB
     Guthaben-=Gebühren
     while Preis<Guthaben:
         Aktien+=1
         Guthaben-=Preis
+    XB.append(i)
+    YB.append(Werte[i])
         
-def Sell(Preis,Gebühren):
+def Sell(Preis,Gebühren,i):
     global Guthaben
     global Aktien
+    global XS
+    global YS
     Guthaben-=Gebühren
     while Aktien>0:
         Aktien-=1
         Guthaben+=Preis
+    XS.append(i)
+    YS.append(Werte[i])
+    
+    
+
+def RelevantTrend(List):
+    sig=numpy.sqrt(Var(List))
+    m=Trend(List)
+    if m>2*sig:
+        return m
+    elif m<-2*sig:
+        return m
+    else:
+        return 0
+    
 
 
 XB=[]
@@ -73,61 +100,34 @@ Guthaben=8000
 Aktien=0
 TradePrice=6.95
 i=0
-Periode=200
+Periode=300
 Graph=[]
+redPeriode=int(Periode/numpy.e)
+Decision=False
 while i<(len(Werte)-Periode):
-    if Trend(Werte[i:i+Periode])>2*numpy.sqrt(Var(Werte[i:i+Periode])):
-        Buy(Werte[i],TradePrice)
-        XB.append(i)
-        YB.append(Werte[i])
-        while Trend(Werte[i:i+Periode])>2*numpy.sqrt(Var(Werte[i:i+Periode])):
-            i+=1
-    else:
-        BuyPreis,BuyPunkt=NEGmoddedOST(Werte[i:i+Periode])
-        i+=BuyPunkt
-        Buy(BuyPreis,TradePrice)
-        XB.append(i)
-        YB.append(BuyPreis)
-        
+    BuyPreis,BuyPunkt=NEGmoddedOST(normalize(Werte[i:i+Periode]))
+    i+=BuyPunkt
+    Buy(Werte[i],TradePrice,i)
     
     if i>(len(Werte)-Periode):
         continue
+    SellPreis,SellPunkt=moddedOST(normalize(Werte[i:i+Periode]))
+    i+=SellPunkt
+    Sell(Werte[i],TradePrice,i)
     
-    if Trend(Werte[i:i+Periode])<-2*numpy.sqrt(Var(Werte[i:i+Periode])):
-        Sell(Werte[i],TradePrice)
-        XS.append(i)
-        YS.append(Werte[i])
-        while Trend(Werte[i:i+Periode])<-2*numpy.sqrt(Var(Werte[i:i+Periode])):
-            i+=1
-    else:
-        SellPreis,SellPunkt=moddedOST(Werte[i:i+Periode])
-        i+=SellPunkt
-        Sell(SellPreis,TradePrice)
-        XS.append(i)
-        YS.append(SellPreis)
     Graph.append(Guthaben)
     
 plt.subplot(2,2,1)
-x1=[]
-x2=[]
-y1=[]
-y2=[]
 plt.title("Buy/Sell Decisions")
-for a in range(1,len(XB)-1):
-    if XS[a] not in XB:
-        x1.append(XS[a])
-        x2.append(XB[a])
-        y1.append(YS[a])
-        y2.append(YB[a])
-plt.scatter(x1,y1,s=100,c="g")
-plt.scatter(x2,y2,s=100,c="r")
+plt.scatter(XS,YS,s=100,c="g")
+plt.scatter(XB,YB,s=100,c="r")
 
 plt.plot([i for i in range(len(Werte))],Werte,"b-")
 Guthaben+=Aktien*Werte[-1]
 Aktien=0    
-print("{0}% increase nach 20 Jahren Trading".format(Guthaben/8000*100))
+print("Factor {0} after 20 years of Trading".format(numpy.round(Guthaben/8000),2))
 plt.subplot(2,2,2)
-plt.title("Guthaben über Zeit")
+plt.title("Equity over Time")
 plt.plot(Graph)
 plt.plot([8000 for i in Graph])
 
@@ -137,4 +137,5 @@ plt.plot(numpy.fft.ifft([0 if abs(x)<1000 else x for x in numpy.fft.rfft(Werte)]
 
 plt.subplot(2,2,4)
 plt.hist([S-B for B,S in zip(YB,YS)])
+plt.axvline(x=numpy.sqrt(Var(Werte)))
 plt.title("Decision Effectiveness")
