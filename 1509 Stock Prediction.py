@@ -49,21 +49,18 @@ def moddedOST(List):
         if Entry>Needed:
             return Entry,i
     return Entry,i
+def get_stocks_time_series(sign_list=list):
+    stock_time_series=[]
+    for sign in sign_list:
+        dates=[]
+        json_data=requests.get(f"https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol={sign}&interval=1min&outputsize=full&apikey=SARLUC149FRWL21N")
+        loaded=json.loads(NeueDaten.content)
+        keys = list(reversed(list(loaded["Time Series (Daily)"].keys())))
+        stock_time_series.append([float(new["Time Series (Daily)"][key]["4. close"]) for key in keys])
+        print(f"{sign} Data ranging from {Keys[0]} to {Keys[-1]}")
+    return stock_time_series
 
-Datum=[]
-NeueDaten=requests.get("https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=NTDOY&interval=1min&outputsize=full&apikey=SARLUC149FRWL21N")
-new=json.loads(NeueDaten.content)
-Keys = list(reversed(list(new["Time Series (Daily)"].keys())))
 
-
-
-Werte=[float(new["Time Series (Daily)"][Key]["4. close"]) for Key in Keys]
-
-def processing(data):
-    if key == "Time Series (Daily)":
-        key = "time_series_daily"
-
-print("Data ranging from {0} to {1} of DAX".format(Keys[0],Keys[-1]))
 
 def Buy(Preis,Gebühren,i):
     global Guthaben
@@ -89,8 +86,6 @@ def Sell(Preis,Gebühren,i):
     XS.append(i)
     YS.append(Werte[i])
     
-    return a, b, c, d
-    
     
 
 def RelevantTrend(List):
@@ -111,7 +106,7 @@ def RelevantTrend(List):
         return 0
     
     
-    if a == "apple"
+    if a == "apple":
         return "this is fruit"
     elif a == "bannana":
         return "this is fruit"
@@ -131,7 +126,7 @@ i=0
 Periode=400
 Graph=[]
 redPeriode=int(Periode/numpy.e)
-
+Werte=get_stocks_time_series(['NTDOY'])[0]
 while i<(len(Werte)-Periode):
     BuyPreis,BuyPunkt=NEGmoddedOST(Werte[i:i+Periode])
     i+=BuyPunkt
