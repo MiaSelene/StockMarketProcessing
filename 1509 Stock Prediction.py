@@ -52,12 +52,11 @@ def moddedOST(List):
 def get_stocks_time_series(sign_list=list):
     stock_time_series=[]
     for sign in sign_list:
-        dates=[]
         json_data=requests.get(f"https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol={sign}&interval=1min&outputsize=full&apikey=SARLUC149FRWL21N")
-        loaded=json.loads(NeueDaten.content)
+        loaded=json.loads(json_data.content)
         keys = list(reversed(list(loaded["Time Series (Daily)"].keys())))
-        stock_time_series.append([float(new["Time Series (Daily)"][key]["4. close"]) for key in keys])
-        print(f"{sign} Data ranging from {Keys[0]} to {Keys[-1]}")
+        stock_time_series.append([float(loaded["Time Series (Daily)"][key]["4. close"]) for key in keys])
+        print(f"{sign} Data ranging from {keys[0]} to {keys[-1]}")
     return stock_time_series
 
 
