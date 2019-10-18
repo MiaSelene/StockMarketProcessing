@@ -1,14 +1,14 @@
+  
 # -*- coding: utf-8 -*-
 """
 Created on Sun Sep 15 11:57:48 2019
-
 @author: User
 """
 import requests
 import json
 import matplotlib.pyplot as plt
 import numpy
-
+import gen_model
 
 class Trader:
     def __init__(self,equity,stocks):
@@ -76,6 +76,7 @@ def normalize(List):
 
 
 def NEGmoddedOST(List):
+    print(len(List))
     stop=int(len(List)/numpy.e)
     Estimate=min(List[:stop])
     avg=sum(List[:stop])/stop
@@ -123,42 +124,44 @@ def get_stocks_time_series(sign_list):
 def RelevantTrend(List):
     sig=numpy.sqrt(Var(List))
     m=Trend(List)
-    if not m>2*sig or not m<-2*sig:
+    if not m>1.5*sig and not m<-1.5*sig:
         return 0
     return m
 
 
 
-XB=[]
-YB=[]
-XS=[]
-YS=[]
 TradePrice=6.95
-i=0
-Periode=400
+Periode=100
 Graph=[]
 redPeriode=int(Periode/numpy.e)
 Werte=get_stocks_time_series(['NTDOY'])[0]
 Budda = Trader(8000,0)
-while i<(len(Werte)-Periode):
-    BuyPreis,BuyPunkt=NEGmoddedOST(Werte[i:i+Periode])
-    i+=BuyPunkt
-    Budda.Buy(Werte[i],TradePrice,i)
-    Graph.append(Budda.NetWorth(Werte[i]))
-    if i>(len(Werte)-Periode):
-        continue
-    SellPreis,SellPunkt=moddedOST(Werte[i:i+Periode])
-    i+=SellPunkt
-    Budda.Sell(Werte[i],TradePrice,i)
-    Graph.append(Budda.NetWorth(Werte[i]))
-    
+Budda.Buy(Werte[0],TradePrice,0)
+Graph.append(Budda.NetWorth(Werte[0]))
+k=Periode+1
+while k<len(Werte):
+    while k<len(Werte):
+        if Budda.YB[-1]<Werte[k]-TradePrice and not RelevantTrend(Werte[(k-Periode):k])>0:
+            Budda.Sell(Werte[k],TradePrice,k)
+            Graph.append(Budda.NetWorth(Werte[k]))
+            k+=Periode
+            break
+        k+=1
+    dB= Budda.XS[-1] - Budda.XB[-1] 
+    if dB<0:
+        break
+    BuyPunkt = NEGmoddedOST(Werte[k:k+dB])[1]
+    k+= BuyPunkt
+    Budda.Buy(Werte[k],TradePrice,k)
+    Graph.append(Budda.NetWorth(Werte[k]))
  
-calc = numpy.round((Budda.NetWorth(Werte[i])/8000.0), 3)
+calc = numpy.round((Budda.NetWorth(Werte[k-1])/8000.0), 3)
 print(f"Factor {calc} after 20 years of Trading")
 
 Budda.Graph(Werte)
-
-
-
-
-
+"""
+x=gen_model.train_model(Werte[1800:2100])
+print(x)
+plt.plot(Werte[1800:2100])
+for func in x:
+    plt.plot([func[1](i) for i in range(300)])"""
