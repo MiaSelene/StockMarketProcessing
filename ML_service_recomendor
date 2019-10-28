@@ -1,0 +1,101 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Fri Oct 25 10:10:14 2019
+
+@author: thausmann
+ML AWS Service recomendation algorithm
+"""
+import numpy as np
+
+def char_to_onehot(char):
+    possible_chars = " aeioubcdfghjklmnpqrstvwxyz"
+    onehot = np.zeros(len(possible_chars))
+    for i in range(len(possible_chars)):
+        if char.lower() == possible_chars[i]:
+            onehot[i] = 1
+            break
+    return onehot
+
+def word_to_vector(word):
+    vector = np.array([])
+    for char in word:
+        vector = np.append(vector,char_to_onehot(char))
+    return vector
+
+def E(x,y):
+    error = 0
+    for xi,yi in zip(x,y):
+        error += (xi-yi)**2
+    return error
+
+def softmax(x):
+    """Compute softmax values for each sets of scores in x."""
+    e_x = np.exp(x - np.max(x))
+    return e_x / e_x.sum()
+
+def softmax_P(x):
+    y = softmax(x)
+    return np.subtract(y,np.square(y))
+
+def ReLU_P(x):
+    return np.maximum(np.sign(x),0)
+
+def M(x,params,hist=False):
+    xPrime = word_to_vector(x)
+    a_l=[np.copy(xPrime)]
+    for layer in params:
+        xPrime = np.maximum(np.dot(xPrime, layer),0)
+        a_l.append(np.copy(xPrime))
+    if hist:
+        return a_l
+    return softmax(xPrime)
+
+def vector_to_word(vec):
+    possible_chars = " aeioubcdfghjklmnpqrstvwxyz"
+    word = ''
+    single_char_space = len(char_to_onehot('a'))
+    char_vecs = [vec[i:i+single_char_space] for i in range(0,len(vec),single_char_space)]
+    for char_vec in char_vecs:
+        word = word + possible_chars[np.argmax(char_vec)]
+    return word
+
+def backprop(p_l,a_l,y):
+    layers = len(p_l)
+    dE_dM = 2*(softmax(a_l[-1])-y)
+    dM_da = softmax_P(a_l[layers])
+    dp_initialized = False
+    k = dE_dM * dM_da
+    for layer in range(layers-1,0,-1):
+        k = k * ReLU_P(np.dot(a_l[layer],p_l[layer]))
+        dz_dp = np.column_stack(np.array([k * ai for ai in a_l[layer-1]]))
+        if dp_initialized == False:
+            dp = dz_dp
+            dp_initialized = True
+        else:
+            print(dz_dp.shape,dp.shape)
+            dp = np.append(dp,dz_dp,axis=1)
+        k = np.dot(p_l[layer],k)
+    return dp
+    
+
+def train(word_dict):
+    x = list(word_dict.keys())
+    Error = [float('inf'),100*len(x)**2]
+    alpha = 0.0002
+    interface_length = len(word_to_vector(x[0]))
+    layer_sizes = [interface_length,20,60,20,interface_length]
+    params = np.array([np.random.normal(size=(size1,size2)) for size1,size2 in zip(layer_sizes,layer_sizes[1:])])
+    while (Error[-1]-Error[-2])**2 > (alpha/len(x))**2:
+        Error.append(0)
+        dp = np.array([])
+        for xi in x:
+            yi = word_to_vector(word_dict[xi])
+            Error[-1] += E(M(xi,params),yi)
+            dp = np.append(dp, backprop(params,M(xi,params,hist=True),yi))
+        params += dp * alpha/len(x)
+        
+    return lambda x: vector_to_word(M(x,params))
+            
+        
+        
