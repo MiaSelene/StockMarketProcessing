@@ -1,0 +1,83 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Mon Nov 25 11:33:36 2019
+
+@author: thausmann
+"""
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib import animation
+
+
+class NN():
+    A_t1 = []
+    A_t2 = []
+    V = []
+    Ws = []
+    def propagate(self):
+        A_t1 = self.A_t1
+        A_t2 = self.A_t2
+        V = self.V
+        Ws = self.Ws
+        for direction in range(len(A_t1.shape)):
+            np.add(V,Ws[2*direction],V,where=np.roll(A_t1,1,axis=direction))
+            np.add(V,Ws[2*direction+1],V,where=np.roll(A_t1,-1,axis=direction))
+        A_t2 = V>0.5
+        V[A_t2] = 0
+        A_t1 = A_t2
+        
+        self.A_t1 = A_t1
+        self.A_t2 = A_t2
+        self.V = V
+    
+    
+    
+A_t1 = np.array(np.zeros((100,100,3)), dtype=bool)
+A_t2 = np.array(np.zeros((100,100,3)), dtype=bool)
+A_t1[:,0,1] = True
+V = np.zeros(A_t1.shape)
+
+A_reduced = np.array(A_t1.shape)
+Ws = [] # setup weights as one offset matrices of A
+indeces = [slice(None),slice(None),slice(None)]
+for direction in range(len(A_t1.shape)):
+    indeces[direction] = slice(1,A_t1.shape[direction])
+    Ws.append(np.zeros(shape=A_t1.shape))
+    Ws[-1][tuple(indeces)] = np.random.normal(size=A_t1[tuple(indeces)].shape)
+    
+    indeces[direction] = slice(0,A_t1.shape[direction]-1)
+    Ws.append(np.zeros(shape=A_t1.shape))
+    Ws[-1][tuple(indeces)] = np.random.normal(size=A_t1[tuple(indeces)].shape)
+    
+
+Athena = NN()
+Athena.A_t1 = A_t1
+Athena.A_t2 = A_t2
+Athena.V = V
+Athena.Ws = Ws
+
+
+# implement conditioning step
+    
+fig = plt.figure()
+ax = plt.axes()
+line = plt.matshow(A_t1[:,:,1],fignum=0)
+Matrices = np.zeros(A_t1[:,:,1].shape)
+Weight = np.ones(A_t1[:,:,1].shape)
+# initialization function: plot the background of each frame
+def init():
+    line.set_data(Athena.A_t1[:,:,1])
+    return line,
+
+# animation function.  This is called sequentially
+def animate(i):
+    Athena.propagate()
+    line.set_data(Athena.A_t1[:,:,1])
+    np.add(Matrices,Weight,Matrices,where=Athena.A_t1[:,:,1])
+    return line,
+
+# call the animator.  blit=True means only re-draw the parts that have changed.
+anim = animation.FuncAnimation(fig, animate, init_func=init,
+                               frames=200, interval=20, blit=True)
+plt.show()

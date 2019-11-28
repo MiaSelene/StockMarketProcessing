@@ -1,0 +1,43 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Wed Nov 13 17:52:03 2019
+
+@author: thausmann
+"""
+import numpy
+import matplotlib.pyplot as plt
+import example
+import ML_service_recomendor
+
+def pyt(x, y):
+    return (x**2 + y**2)**(1/2)
+
+def unit_circle(x, y):
+    length = pyt(x, y)
+    return x/length, y/length
+
+Ax, Ay = [numpy.random.normal()/6 for i in range(100)], [numpy.random.normal()/6 for i in range(100)]
+
+Bx, By = [], []
+for x, y in zip(Ax, Ay):
+    nx, ny = [e-q for e, q in zip(unit_circle(x,y),(x,y))]
+    Bx.append(nx)
+    By.append(ny)
+    
+
+PointsA = (Ax,Ay,'ro')
+PointsB = (Bx,By,'bo')
+
+generator = ML_service_recomendor.train([[Axi,Ayi] for Axi,Ayi in zip(Ax,Ay)]
+                                    +[[Bxi,Byi] for Bxi,Byi in zip(Bx,By)],
+                                    [[0,1] if i<250 else [1,0] for i in range(499)])
+
+Models = []
+for Model in generator:
+    Models.append(Model)
+
+i = max(int(len(Models)/5),1)
+
+for Model in Models[::i]:
+    example.GRAPH(lambda x,y: Model([x**2,y**2,x,y]), PointsA, PointsB)

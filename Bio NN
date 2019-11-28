@@ -1,0 +1,20 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Tue Nov 19 14:34:00 2019
+
+@author: thausmann
+"""
+import numpy as np
+import matplotlib.pyplot as plt
+
+fig = plt.figure()
+
+xs = [x/10 for x in range(-10,31)]
+plt.plot(xs,[2**x for x in xs])    
+plt.legend(['f(x) = 2^x'])
+plt.grid()
+plt.xlim([-0.5,3])
+plt.ylim([-0.2,8.2])
+plt.axvline(0,c='black',alpha=0.8)
+plt.ayvline(0,c='black',alpha=0.8)
