@@ -8,7 +8,7 @@ Created on Mon Nov 25 11:33:36 2019
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import animation
-
+import time
 
 class NN():
     A_t1 = []
@@ -20,6 +20,7 @@ class NN():
         A_t2 = self.A_t2
         V = self.V
         Ws = self.Ws
+        V[1,:,:]+= np.ones(shape=V[1,:,:].shape)
         for direction in range(len(A_t1.shape)):
             np.add(V,Ws[2*direction],V,where=np.roll(A_t1,1,axis=direction))
             np.add(V,Ws[2*direction+1],V,where=np.roll(A_t1,-1,axis=direction))
@@ -30,8 +31,20 @@ class NN():
         self.A_t1 = A_t1
         self.A_t2 = A_t2
         self.V = V
+        self.condition()
     
-    
+    def condition(self):
+        ALPHA = np.zeros(shape=self.A_t1.shape)
+        ALPHA.fill(0.01)
+        Ws = self.Ws
+        for direction in range(len(self.A_t1.shape)):
+            np.add(Ws[2*direction],ALPHA,Ws[2*direction],where=np.logical_and(np.roll(A_t1,1,axis=direction),A_t2))
+            np.add(Ws[2*direction+1],ALPHA,Ws[2*direction+1],where=np.logical_and(np.roll(A_t1,-1,axis=direction),A_t2))
+            
+            np.subtract(Ws[2*direction],2*ALPHA,Ws[2*direction],where=np.logical_and(np.logical_not(np.roll(A_t1,1,axis=direction)),A_t2))
+            np.subtract(Ws[2*direction+1],2*ALPHA,Ws[2*direction+1],where=np.logical_and(np.logical_not(np.roll(A_t1,-1,axis=direction)),A_t2))
+        self.Ws = Ws
+            
     
 A_t1 = np.array(np.zeros((100,100,3)), dtype=bool)
 A_t2 = np.array(np.zeros((100,100,3)), dtype=bool)
@@ -58,13 +71,21 @@ Athena.V = V
 Athena.Ws = Ws
 
 
+"""
+start = time.time()
+Amount = 10000
+for i in range(Amount):
+    Athena.propagate()
+stop = time.time()
+print(f'{Amount} in {stop-start}s, meaning {((stop-start)/Amount*1000).__round__(2)}ms per iteration')
+"""
+
 # implement conditioning step
     
 fig = plt.figure()
 ax = plt.axes()
 line = plt.matshow(A_t1[:,:,1],fignum=0)
-Matrices = np.zeros(A_t1[:,:,1].shape)
-Weight = np.ones(A_t1[:,:,1].shape)
+
 # initialization function: plot the background of each frame
 def init():
     line.set_data(Athena.A_t1[:,:,1])
@@ -72,9 +93,10 @@ def init():
 
 # animation function.  This is called sequentially
 def animate(i):
-    Athena.propagate()
+    for i in range(1):
+        Athena.propagate()
+    Athena.A_t1[1,1,1] = True if i%2==0 else False
     line.set_data(Athena.A_t1[:,:,1])
-    np.add(Matrices,Weight,Matrices,where=Athena.A_t1[:,:,1])
     return line,
 
 # call the animator.  blit=True means only re-draw the parts that have changed.
