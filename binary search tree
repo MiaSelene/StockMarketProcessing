@@ -1,0 +1,73 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Tue Dec  3 14:10:34 2019
+
+@author: thausmann
+binary tree
+"""
+import time
+import matplotlib.pyplot as plt
+import random
+
+class Node():
+    def __init__(self,value):
+        self.value = value
+        self.left = False
+        self.right = False
+    
+    def left_right_applic(self,value,func):
+        if value > self.value and self.right:
+            return func(self.right,value)
+        if value <= self.value and self.left:
+            return func(self.left,value)
+        return False
+    
+    def lookup(self,value):
+        if self.value == value:
+            return True
+        return self.left_right_applic(value,Node.lookup)
+
+    
+    def insert(self,value):
+        if self.left_right_applic(value,Node.insert):
+            return True
+        if value <= self.value:
+            self.left = Node(value)
+        self.right = Node(value)
+        return True
+        
+    def print_from_left(self):
+        if self.left:
+            self.left.print_from_left()
+        print(self.value)
+        if self.right:
+            self.right.print_from_left()
+            
+
+def median(array):
+    half_length = len(array)/2
+    if len(array)%2==0:
+        return array[int(half_length)]
+    else:
+        return (array[int(half_length)]+array[int(half_length)+1])/2
+
+def test(n):
+    new = 0
+    for i in range(10000):
+        size = n
+        data = [i for i in range(size)]
+        top = Node(median(data))
+        random.shuffle(data)
+        for point in data:
+            top.insert(point)
+        start = time.time()
+        for i in range(2*size):
+            top.lookup(i)
+        stop=time.time()
+        new += (stop-start)/2/n
+    return new / 1000
+
+
+
+plt.plot([2.714**test(n) for n in range(6,100)])

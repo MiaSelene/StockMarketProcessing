@@ -1,0 +1,44 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Thu Dec 12 15:15:41 2019
+
+@author: thausmann
+"""
+import matplotlib.pyplot as plt
+import numpy as np
+
+def de_solver(i_v, d_es, start, stop, step, Sequence = None):
+    y = i_v
+    limit = int((stop-start)/step)
+    for i in range(limit):
+        for a in range(len(y)):
+            y[a] += RungeKutta_step(d_es[a], y, i*step, a, step)
+        if Sequence:
+            Sequence.append(y)
+    if Sequence:
+        return Sequence[1:]
+    return y
+
+
+def RungeKutta_step(d_e, y, t, a, step):
+    y = y.copy()
+    s1 = d_e(y, t)
+    y[a] += step*s1/2
+    s2 = d_e(y, t + step/2)
+    y[a] += step*s2/2 - step*s1/2
+    s3 = d_e(y, t + step/2)
+    y[a] += s3*step - step*s2/2
+    s4 = d_e(y, t+step)
+    y[a] += -s3*step
+    return step/6*(s1 + 2*(s2+s3) + s4)
+
+
+def pol(coeff,z):
+    return sum([z**n*a for n,a in enumerate(coeff)])
+
+
+normal = 1/np.sqrt(np.pi)
+coefficients = [0,0.34802,-0.0958798,0.7478556]
+t =lambda x: 1/(0.47047*x+1)
+erf = lambda x: (1-(pol(coefficients,t(x)))*np.exp(-x**2))*normal if x>=0 else 1-erf(-x)

@@ -1,0 +1,24 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Thu Jan 16 12:19:32 2020
+
+@author: thausmann
+"""
+
+from concurrent import futures
+import time
+
+def waaaart(n):
+    print('scheduled ', n)
+    time.sleep(n/400)
+    print('finished ', n)
+    return n
+
+seq = [5,12,4,1,3,4,1,23,4,52,34,6,234]
+workers = 3
+while not seq == sorted(seq):
+    with futures.ThreadPoolExecutor(workers) as ex:
+        res = ex.map(waaaart,seq)
+        seq=list(res)
+    print(seq)

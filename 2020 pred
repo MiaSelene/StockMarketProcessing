@@ -1,0 +1,119 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Mon Jan 13 12:58:15 2020
+
+@author: thausmann
+"""
+import requests
+import json
+import matplotlib.pyplot as plt
+import numpy
+class Trader:
+    def __init__(self,equity,stocks):
+        self.equity = equity
+        self.stocks = stocks
+        self.XB = []
+        self.YB = []
+        self.XS = []
+        self.YS = []
+        
+        
+    def Buy(self,price,cost,i):
+        self.equity -= cost
+        while price < self.equity:
+            self.stocks += 1
+            self.equity -= price
+        self.XB.append(i)
+        self.YB.append(price)
+        
+
+    def Sell(self,price,cost,i):
+        self.equity -= cost
+        while self.stocks > 0:
+            self.stocks -= 1
+            self.equity += price
+        self.XS.append(i)
+        self.YS.append(price)
+    def NetWorth(self,Price):
+        return self.equity + self.stocks * Price
+    
+    def Graph(self,hist):
+        plt.subplot(2,2,4)
+        plt.hist([S-B for B,S in zip(self.YB,self.YS)])
+        plt.title("Decision Effectiveness")
+        plt.subplot(2,2,1)
+        plt.title("Buy/Sell Decisions")
+        plt.scatter(self.XS,self.YS,s=100,c="g")
+        plt.scatter(self.XB,self.YB,s=100,c="r")
+        plt.plot([i for i in range(len(hist))],hist,"b-")
+        plt.subplot(2,2,2)
+        plt.title("Equity over Time")
+        plt.plot(Graph)
+        plt.plot([8000 for i in Graph])
+        plt.subplot(2,2,3)
+        plt.title("Fourier Noise Reduction")
+        plt.plot(numpy.fft.ifft([0 if abs(x)<3000 else x for x in numpy.fft.rfft(Werte)]))
+        
+
+
+def normal(interval):
+    mue = sum(interval)/len(interval)
+    xbar = (len(interval)+1)/2
+    b = sum([(xi - xbar)*(yi - mue) for xi,yi in zip(range(len(interval)),interval) ])/sum([(xi-xbar)**2 for xi in range(len(interval))])
+    a = mue - b * xbar
+    sigma = numpy.sqrt(Var([yi - xi*b + a for yi,xi in zip(interval,range(len(interval)))]))
+    #print(((a + b * len(interval))-interval[-1])/sigma)
+    return (a + b * len(interval))
+            
+            
+def Var(List):
+    avg=sum(List)/len(List)
+    return sum([numpy.square(x-avg) for x in List])/len(List)
+       
+        
+
+def get_stocks_time_series(sign_list):
+    stock_time_series=[]
+    for sign in sign_list:
+        json_data=requests.get(f"https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol={sign}&interval=1min&outputsize=full&apikey=SARLUC149FRWL21N")
+        loaded=json.loads(json_data.content)
+        keys = list(reversed(list(loaded["Time Series (Daily)"].keys())))
+        stock_time_series.append([float(loaded["Time Series (Daily)"][key]["4. close"]) for key in keys])
+        print(f"{sign} Data ranging from {keys[0]} to {keys[-1]}")
+    return stock_time_series
+
+
+
+
+TradePrice=6.95
+Graph=[]
+Werte=get_stocks_time_series(['DJI'])[0]
+Budda = Trader(8000,0)
+Budda.Buy(Werte[0],TradePrice,0)
+Graph.append(Budda.NetWorth(Werte[0]))
+k=200
+while k<len(Werte):
+    Graph.append(Budda.NetWorth(Werte[k]))
+    while k<len(Werte):
+        if normal(Werte[k-200:k-100])<normal(Werte[k-100:k]):     
+            Budda.Buy(Werte[k],TradePrice,k)
+            break
+        k+=100
+    while k<len(Werte):
+        if normal(Werte[k-200:k-100])>normal(Werte[k-100:k]):     
+            Budda.Sell(Werte[k],TradePrice,k)
+            break   
+        k+=100
+    
+ 
+calc = numpy.round((Budda.NetWorth(Werte[k-100])/8000.0), 3)
+print(f"Factor {calc} after 20 years of Trading")
+
+#Budda.Graph(Werte)
+
+
+        
+                
+plt.plot(Werte[:10])
+plt.show()

@@ -1,0 +1,26 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Wed Jan 15 13:35:02 2020
+
+@author: thausmann
+"""
+
+
+import matplotlib.pyplot as plt
+import numpy
+from datetime import datetime
+
+
+dates = ['2019-11-12', '2019-11-19', '2019-11-25', '2019-12-3',
+         '2019-12-10', '2019-12-17', '2020-01-07', '2020-01-09',
+         '2020-01-14']
+
+steps = [50, 90, 45, 30, 50, 75, 65, 100, 90]
+plt.xlabel('Summe = '+ str(sum(steps)) + ', ohne die Teststunde (-50min) also '+ str((sum(steps[1:])/60).__round__(2)) +'h\n'
+           +'davon bereits bezahlt sind 40 Euro,\n wodurch das ausstehende Gehalt sich auf ' +str((sum(steps[1:])/4).__round__(2))+' Euro beläuft' )
+dates_list = []
+plt.title('Unterrichtszeit nach Datum in Minuten.' )
+for date in dates:
+    dates_list.append(datetime.strptime(date, '%Y-%m-%d'))
+plt.bar(dates_list, steps, 3)

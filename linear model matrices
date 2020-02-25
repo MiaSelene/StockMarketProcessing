@@ -1,0 +1,36 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Fri Dec  6 14:26:18 2019
+
+@author: thausmann
+"""
+import numpy as np
+import matplotlib.pyplot as plt
+
+def linearModel(x,y):
+    ws = np.random.normal(size=x[0].shape)
+    dw = np.zeros(shape=ws.shape)
+    model = lambda x: np.matmul(x,ws)
+    alpha = 0.001
+    while True:
+        for point in zip(x,y):
+            for i in range(dw):
+                dw[i] = -2 (point[1]-model(point(0)))*rad_base(point[0]) / len(x)
+    ws -= dw * alpha
+
+
+
+def rad_base(x):
+    points = [np.pi*n for n in range(int(len(x)/np.pi)+1)]
+    d = float('inf')
+    for point in points:
+        if (x-point)**2 < d:
+            d = (x-point)**2
+    return np.exp(-8*d)
+
+target = np.sin([y/10 for y in range(100)])
+m = linearModel([[x/10] for x in range(100)],[y * rad_base(x/10,[np.pi * n for n in range(int(len(target)/np.pi)+1)]) for x,y in enumerate(target)])
+plt.plot([y * rad_base(x/10,[np.pi * n for n in range(int(len(target)/np.pi)+1)]) for x,y in enumerate(target)])
+#plt.plot(target)rad_base(i/10,[np.pi * n for n in range(int(len(target)/np.pi)+3)])
+plt.plot([m([1,i/10]) for i in range(120)])
